@@ -5,6 +5,7 @@ import format from "date-fns/format";
 
 import type { GameDataResponse } from "@/pages/api/game";
 import { GameInfo } from "./components/game-info";
+import { GameState } from "@/mlb";
 
 const TEN_SECONDS = 10 * 1000;
 
@@ -17,12 +18,12 @@ const MainPage: NextPage = () => {
 
   const fetchGameData = async () => {
     const response = await fetch("/api/game");
-    const data = await response.json();
+    const data = (await response.json()) as GameDataResponse;
     setData(data);
     setLoading(false);
     setLastUpdatedAt(new Date());
 
-    if (data.isTeamPlayingToday && data?.game.status !== "Final") {
+    if (data.isTeamPlayingToday && data?.game?.status !== GameState.Final) {
       setShouldContinuallyUpdate(true);
     }
   };
@@ -44,7 +45,7 @@ const MainPage: NextPage = () => {
   if (loading || !data) {
     return (
       <main>
-        <div className="text-center mt-20">{"Loading..."}</div>
+        <div className="text-center mt-20 text-7xl animate-spin">{"🐻"}</div>
       </main>
     );
   }
