@@ -14,14 +14,10 @@ const Team: React.FC<TeamProps> = ({ name, id }) => {
   const src = `https://www.mlbstatic.com/team-logos/${id}.svg`;
 
   return (
-    <div className="flex flex-col w-1/2">
-      <Image
-        className="mx-auto"
-        src={src}
-        width={100}
-        height={100}
-        alt={`${name} team logo`}
-      />
+    <div className="flex flex-col w-1/2 justify-between">
+      <div className="mx-auto flex align-middle h-32">
+        <Image src={src} width={100} height={100} alt={`${name} team logo`} />
+      </div>
       <span className="font-semibold text-lg">{name}</span>
     </div>
   );
