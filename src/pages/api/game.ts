@@ -3,6 +3,7 @@ import type {
   GetGamesForSportResponse,
   GetGameFeedResponse,
   Game,
+  GameState,
 } from "../../mlb";
 import type { NextApiRequest, NextApiResponse } from "next";
 import format from "date-fns/format";
@@ -77,7 +78,7 @@ const getScheduledGame = async (
 
 export type GameInfo = {
   datetime: string;
-  status: "In Progress" | "Scheduled" | "Final";
+  status: GameState;
   remainingTime: number;
   venue: string;
   homeTeam: {
@@ -89,14 +90,14 @@ export type GameInfo = {
     id: number;
   };
   play: {
-    homeScore: number;
-    awayScore: number;
+    homeScore: number | null;
+    awayScore: number | null;
     halfInning: "bottom" | "top";
     inning: number;
     count: {
-      balls: number;
-      strikes: number;
-      outs: number;
+      balls: number | null;
+      strikes: number | null;
+      outs: number | null;
     };
   };
 };
@@ -122,43 +123,45 @@ const handler = async (
   const findByTeam = findGameTodayByTeam(ICubsTeamId);
   const game = scheduledGames.find(findByTeam);
 
-  //   if (!game) {
-  //     res.status(200).send({ isTeamPlayingToday: false });
-  //     return;
-  //   }
+  if (!game) {
+    res.status(200).send({ isTeamPlayingToday: false });
+    return;
+  }
 
   const {
     gameData: { teams, datetime, venue, status },
     liveData: {
       plays: { currentPlay },
     },
-  } = await getScheduledGame(722927); //TODO should be game.gamePk
+  } = await getScheduledGame(game.gamePk);
 
   return res.status(200).send({
     isTeamPlayingToday: true,
     isHome: teams.home.id === ICubsTeamId,
     game: {
-      remainingTime: estimateRemainingTime(
-        currentPlay.about.halfInning,
-        currentPlay.count.strikes,
-        currentPlay.count.balls,
-        currentPlay.count.outs
-      ),
+      remainingTime: currentPlay
+        ? estimateRemainingTime(
+            currentPlay.about.halfInning,
+            currentPlay.count.strikes,
+            currentPlay.count.balls,
+            currentPlay.count.outs
+          )
+        : 0,
       homeTeam: { name: teams.home.name, id: teams.home.id },
       awayTeam: { name: teams.away.name, id: teams.away.id },
       datetime: datetime.dateTime,
       venue: venue.name,
       status: status.detailedState,
       play: {
-        awayScore: currentPlay.result.awayScore,
-        homeScore: currentPlay.result.homeScore,
+        awayScore: currentPlay?.result.awayScore ?? null,
+        homeScore: currentPlay?.result.homeScore ?? null,
         count: {
-          balls: currentPlay.count.balls,
-          outs: currentPlay.count.outs,
-          strikes: currentPlay.count.strikes,
+          balls: currentPlay?.count.balls ?? null,
+          outs: currentPlay?.count.outs ?? null,
+          strikes: currentPlay?.count.strikes ?? null,
         },
-        halfInning: currentPlay.about.halfInning,
-        inning: currentPlay.about.inning,
+        halfInning: currentPlay?.about.halfInning ?? "top",
+        inning: currentPlay?.about.inning ?? 1,
       },
     },
   });

@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "./node_modules/next/dist/bin/next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "build": "./node_modules/next/dist/bin/next build",
+    "start": "./node_modules/next/dist/bin/next start",
+    "lint": "./node_modules/next/dist/bin/next lint"
   },
   "dependencies": {
     "@types/node": "20.2.5",

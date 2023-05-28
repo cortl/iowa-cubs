@@ -18,8 +18,14 @@ type LeagueRecord = {
 
 type GameStatus = {
   abstractGameState: "Live" | "Preview";
-  detailedState: "In Progress" | "Scheduled";
+  detailedState: GameState;
 };
+
+export enum GameState {
+  InProgress = "In Progress",
+  Scheduled = "Scheduled",
+  Final = "Final",
+}
 
 export type Game = {
   gamePk: number;
@@ -53,7 +59,7 @@ export type GameDate = {
 
 type LiveData = {
   plays: {
-    currentPlay: {
+    currentPlay?: {
       result: {
         awayScore: number;
         homeScore: number;
