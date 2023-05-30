@@ -23,7 +23,11 @@ const MainPage: NextPage = () => {
     setLoading(false);
     setLastUpdatedAt(new Date());
 
-    if (data.isTeamPlayingToday && data?.game?.status !== GameState.Final) {
+    if (
+      data.isTeamPlayingToday &&
+      data?.game?.status !== GameState.Final &&
+      data?.game?.status !== GameState.GameOver
+    ) {
       setShouldContinuallyUpdate(true);
     }
   };

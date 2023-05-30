@@ -25,6 +25,7 @@ export enum GameState {
   InProgress = "In Progress",
   Scheduled = "Scheduled",
   Final = "Final",
+  GameOver = "Game Over",
 }
 
 export type Game = {
