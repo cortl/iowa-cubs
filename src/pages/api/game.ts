@@ -13,16 +13,26 @@ const ICubsTeamId = 451;
 
 const BASE_URL = "https://statsapi.mlb.com";
 
-const estimateRemainingTime = (
-  inning: "top" | "bottom",
-  strikes: number,
-  balls: number,
-  outs: number
-): number => {
+type EstimateInput = {
+  currentInning: number;
+  currentInningIndicator: "top" | "bottom";
+  strikes: number;
+  balls: number;
+  outs: number;
+};
+
+export const estimateGameTimeCompletion = ({
+  currentInning,
+  currentInningIndicator,
+  strikes,
+  balls,
+  outs,
+}: EstimateInput): number => {
   // Constants (estimated average times)
+  const TOTAL_INNINGS = 10; // 9 actual, but need to include the 9
   const AVG_TIME_PER_PITCH: number = 20; // milliseconds
   const AVG_TIME_PER_OUT: number = 30000; // milliseconds
-  const AVG_TIME_PER_HALF_INNING: number = 180000; // milliseconds
+  const AVG_TIME_PER_INNING: number = 180000;
 
   // Calculate time for pitches
   const pitchCount: number = strikes * 3 + balls;
@@ -31,21 +41,26 @@ const estimateRemainingTime = (
   // Calculate time for outs
   const outTime: number = outs * AVG_TIME_PER_OUT;
 
-  // Calculate time for half-innings
-  const halfInningTime: number = AVG_TIME_PER_HALF_INNING;
-
-  // Determine the current half-inning
-  let remainingTime: number;
-  if (inning === "top") {
-    remainingTime = halfInningTime - (pitchTime + outTime);
-  } else if (inning === "bottom") {
-    remainingTime = halfInningTime - (pitchTime + outTime) - 2 * halfInningTime;
+  // Calculate time for remaining innings
+  let remainingInnings: number;
+  if (currentInning === TOTAL_INNINGS && currentInningIndicator === "top") {
+    remainingInnings = 1; // One inning remaining (bottom of the ninth)
   } else {
-    remainingTime = 0;
+    remainingInnings = TOTAL_INNINGS - currentInning;
+    if (currentInningIndicator === "bottom") {
+      remainingInnings -= 0.5; // Subtract half-inning if it's the bottom
+    }
   }
+  const remainingInningsTime: number = remainingInnings * AVG_TIME_PER_INNING;
 
-  // Ensure the remaining time is positive
-  remainingTime = Math.max(remainingTime, 0);
+  // Calculate time for the current half-inning
+  const elapsedInningTime: number =
+    pitchTime + outTime - remainingInningsTime / 2;
+
+  const remainingTime: number = Math.max(
+    remainingInningsTime - elapsedInningTime,
+    0
+  );
 
   return remainingTime;
 };
@@ -140,12 +155,13 @@ const handler = async (
     isHome: teams.home.id === ICubsTeamId,
     game: {
       remainingTime: currentPlay
-        ? estimateRemainingTime(
-            currentPlay.about.halfInning,
-            currentPlay.count.strikes,
-            currentPlay.count.balls,
-            currentPlay.count.outs
-          )
+        ? estimateGameTimeCompletion({
+            currentInning: currentPlay.about.inning,
+            currentInningIndicator: currentPlay.about.halfInning,
+            strikes: currentPlay.count.strikes,
+            balls: currentPlay.count.balls,
+            outs: currentPlay.count.outs,
+          })
         : 0,
       homeTeam: { name: teams.home.name, id: teams.home.id },
       awayTeam: { name: teams.away.name, id: teams.away.id },

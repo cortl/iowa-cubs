@@ -1,9 +1,11 @@
 import Image from "next/image";
 import format from "date-fns/format";
+import add from "date-fns/add";
 
 import type { GameInfo as GameInfoProps } from "@/pages/api/game";
 import { capitalize, getOrdinalNumber } from "../utils";
 import { GameState } from "@/mlb";
+import { intervalToDuration } from "date-fns";
 
 type TeamProps = {
   name: string;
@@ -39,11 +41,19 @@ const AboutGame: React.FC<AboutGameProps> = ({
   inning,
 }) => {
   const isGameInProgress = status === GameState.InProgress;
+  const remainingSeconds = remainingTime / 1000;
+
+  const expectedFinishTime = add(new Date(), { seconds: remainingSeconds });
+
+  const timeUntil = intervalToDuration({
+    start: new Date(),
+    end: expectedFinishTime,
+  });
 
   if (isGameInProgress) {
     return (
       <div className="w-full text-center mt-5">
-        <p>{`Estimated time remaining: ${remainingTime}ms`}</p>
+        <p>{`Estimated time remaining: ${timeUntil.hours} hours, ${timeUntil.minutes} minutes, ${timeUntil.seconds} seconds`}</p>
         <p>
           {status} {format(new Date(datetime), "h:mmaa M/dd/yyyy")}
         </p>
